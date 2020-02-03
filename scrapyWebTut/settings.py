@@ -76,9 +76,9 @@ SPLASH_URL = 'http://0.0.0.0:8050/'
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'scrapyWebTut.pipelines.ScrapywebtutPipeline': 300,
-#}
+ITEM_PIPELINES = {
+   'scrapyWebTut.pipelines.ScrapywebtutPipeline': 300,
+}
 
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter' #custom
 
@@ -104,3 +104,6 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+MONGO_URI = 'mongodb://localhost:27017'
+MONGO_DATABASE = 'daft'
