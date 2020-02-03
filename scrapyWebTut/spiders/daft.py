@@ -34,7 +34,9 @@ class DaftSpider(scrapy.Spider):
         size = response.xpath('//div[@id="address_box"]//span[contains(text(),"feet")]//text()').get()
         how_many_times_views = response.xpath(
             '//div[@class="description_extras"]//h3[contains(text(),"Property Views:")]/following-sibling::text()[1]').get()
-        yield rent_price
-        yield location
-        yield size
-        yield how_many_times_views
+        yield {
+            'rent_price': rent_price,
+            'location': location,
+            'size': size,
+            'how_many_times_views': how_many_times_views
+        }
