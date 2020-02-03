@@ -81,4 +81,121 @@ scrapy : 1.8.0
 OS: Ubuntu 18.04.2 LTS
 Splash v3.3.1
 
+# MongoDB pipeline
+
+MongoDB is NoSQL that has a very fluid development process with scrapy and python.
+
+To note we do not need to configure the database in mongodb or create it the pymongo libary will do it for us.
+
+A example of data I scraped and host in mongoDB can be see here 
+https://cryt.ie/API/api.html#view_data
+
+To begin we will add two variables to the scrapy settings file
+```python
+MONGO_URI = 'mongodb://localhost:27017'
+MONGO_DATABASE = 'daft'
+```
+
+We will then uncomment 
+```python
+ITEM_PIPELINES = {
+   'scrapyWebTut.pipelines.ScrapywebtutPipeline': 300,
+} 
+```
+
+in the settings we need to activate the pipeline, the number is the ID and will decide what pipelines get executed first.
+
+the URI will points to mongo database
+*I presume you will use mongoDB localy and not configure security measures for testing and development*
+The database name is daft and is where we will store the data.
+
+Will we need the libary *pymongo*
+can be installed with pip 
+
+In the pipeline ScrapywebtutPipeline
+We will override the __init__ method
+```python
+    def __init__(self, mongo_uri, mongo_db, stats):
+        self.mongo_uri = mongo_uri
+        self.mongo_db = mongo_db
+        self.stats = stats
+```
+This will simply set the variables from the settings file.
+
+However we need to also override from_crawler which has access the the scrapy env and settings we set
+```python
+   @classmethod
+    def from_crawler(cls, crawler):
+        ## pull in information from settings.py
+        return cls(
+            mongo_uri=crawler.settings.get('MONGO_URI'),
+            mongo_db=crawler.settings.get('MONGO_DATABASE'),
+            stats=crawler.stats
+        )
+``` 
+This will be called by the scrapy framework BEFORE __Init__ and then call init with the params we give.
+This is standard and can be used for all your projects working with mongoDB
+
+After we will override the open_spider method and init the pymongo libary and connection to the database
+```python
+def open_spider(self, spider):
+        self.client = pymongo.MongoClient(self.mongo_uri)
+        self.db = self.client[self.mongo_db]
+```
+This is following the life cycle design pattern scrapy uses.
+
+Now we will also override close_spider 
+```python
+    def close_spider(self, spider):
+        self.client.close()
+```
+simply closing the database connection
+
+Now we will we get to the process_item(self,item,spider) function 
+Where we can filter, process and then store the data in our mongoDB
+In the case of this project we know the item will be a dict 
+```python
+    yield {
+            'rent_price': rent_price,
+            'location': location,
+            'size': size,
+            'how_many_times_views': how_many_times_views
+        }
+```
+And we won't process or filter the data but simply insert the data into our mongoDB
+we will insert into the collection called "properties" inside the daft database using the connection we set up ealier.
+We will also return the item as we may add more pipelines that come after the mongoDB such as adding it to a MYSQL data etc..
+not returning the item tells scrapy that you want to discard it and can cause annoying logic bugs.
+
+```python
+  def process_item(self, item, spider):
+        self.db['properties'].insert(item)
+        return item
+```
+And thats it we now stored the data in our mongoDB
+
+To the data in mongo through the cmd
+We use the commands
+
+```
+mongo
+show dbs
+use daft
+show collections
+db.properties.find().pretty()
+```
+
+![alt text](https://github.com/avacadoadam/webScrappingDaft/blob/master/mongoDbexample.png)
+
+Pipelines are very handy as we can create differnet ones to do differnet things and reuse them in other projects
+A example may be 
+
+FilterDataPipeline: 10
+AddDataThroughAIModalPipeline: 100
+AddDataToMongoDBPipeline: 110
+EmailDataToMePipeLine: 120
+
+
 Feel free to ask any questions or another scraping project you would like help with!
+
+
